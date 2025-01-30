@@ -1,0 +1,46 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Build Docker image
+      - name: Build Docker image
+        run: docker build -t fundstrive-backend .
+
+      # Step 3: Save Docker image as a tar file
+      - name: Save Docker image
+        run: docker save -o fundstrive-backend.tar fundstrive-backend
+
+      # Step 4: Copy Docker image to EC2
+      - name: Copy Docker image to EC2
+        uses: appleboy/scp-action@v0.1.3
+        with:
+          host: ${{ secrets.AWS_EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.AWS_EC2_SSH_KEY }}
+          source: "fundstrive-backend.tar"
+          target: "/home/ubuntu/fundstrive-backend.tar"
+
+      # Step 5: SSH into EC2 and deploy
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.AWS_EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.AWS_EC2_SSH_KEY }}
+          script: |
+            docker load -i /home/ubuntu/fundstrive-backend.tar
+            docker stop fundstrive-backend || true
+            docker rm fundstrive-backend || true
+            docker run -d --name fundstrive-backend -p 3000:3000 fundstrive-backend
