@@ -26,7 +26,7 @@ jobs:
 
     steps:
     - name: Pull image from docker hub
-      uses: docker pull soyket/nodejs-app:latest
+      run: docker pull soyket/nodejs-app:latest
     - name: Delete old docker container
       run: docker rm -f nodejs-app-container
     - name: Run docker container
