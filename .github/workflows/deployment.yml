@@ -13,19 +13,23 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+
       - name: Build Docker Image
-        run: docker build -t ${{ secrets.DOCKER_USER }}/nodejs-app .
+        run: docker build -t ${{ secrets.DOCKER_USER }}/nodejs-app:latest .
+
       - name: Push Image to Docker Hub
         run: docker push ${{ secrets.DOCKER_USER }}/nodejs-app:latest
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
+
     steps:
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.9
@@ -37,21 +41,26 @@ jobs:
           script: |
             set -e  # Exit on error
 
+            CONTAINER_NAME="nodejs-app-container"
+
+            echo "Logging in to Docker Hub..."
+            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USER }}" --password-stdin
+
             echo "Pulling latest Docker image..."
             if ! docker pull ${{ secrets.DOCKER_USER }}/nodejs-app:latest; then
-              echo "Failed to pull Docker image" >&2
+              echo "❌ Failed to pull Docker image" >&2
               exit 1
             fi
 
             echo "Stopping and removing old container if exists..."
-            docker stop $CONTAINER_NAME || echo "No container running"
-            docker rm $CONTAINER_NAME || echo "No container to remove"
+            docker stop $CONTAINER_NAME || echo "⚠ No container running"
+            docker rm $CONTAINER_NAME || echo "⚠ No container to remove"
 
             echo "Pruning unused Docker images..."
             docker image prune -af
 
             echo "Running new container..."
-            docker run -d --restart unless-stopped -p 4000:4000 --name $CONTAINER_NAME \
-              ${{ secrets.DOCKER_USER }}/nodejs-app
+            docker run -d --restart unless-stopped -p 80:4000 --name $CONTAINER_NAME \
+              ${{ secrets.DOCKER_USER }}/nodejs-app:latest
 
-            echo "Deployment successful!"
+            echo "✅ Deployment successful!"
