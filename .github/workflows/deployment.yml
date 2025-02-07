@@ -41,17 +41,6 @@ jobs:
           script: |
             set -e  # Exit on error
 
-            CONTAINER_NAME="nodejs-app-container"
-
-            echo "Logging in to Docker Hub..."
-            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USER }}" --password-stdin
-
-            echo "Pulling latest Docker image..."
-            if ! docker pull ${{ secrets.DOCKER_USER }}/nodejs-app:latest; then
-              echo "❌ Failed to pull Docker image" >&2
-              exit 1
-            fi
-
             echo "Stopping and removing old container if exists..."
             docker stop $CONTAINER_NAME || echo "⚠ No container running"
             docker rm $CONTAINER_NAME || echo "⚠ No container to remove"
