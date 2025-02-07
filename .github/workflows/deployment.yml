@@ -42,14 +42,14 @@ jobs:
             set -e  # Exit on error
 
             echo "Stopping and removing old container if exists..."
-            docker stop $CONTAINER_NAME || echo "⚠ No container running"
-            docker rm $CONTAINER_NAME || echo "⚠ No container to remove"
+            docker stop ${{ secrets.CONTAINER_NAME }} || echo "⚠ No container running"
+            docker rm ${{ secrets.CONTAINER_NAME }} || echo "⚠ No container to remove"
 
             echo "Pruning unused Docker images..."
             docker image prune -af
 
             echo "Running new container..."
-            docker run -d --restart unless-stopped -p 4000:4000 --name $CONTAINER_NAME \
+            docker run -d --restart unless-stopped -p 4000:4000 --name ${{ secrets.CONTAINER_NAME }} \
               ${{ secrets.DOCKER_USER }}/nodejs-app:latest
 
             echo "✅ Deployment successful!"
