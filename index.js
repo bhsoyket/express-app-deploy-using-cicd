@@ -5,6 +5,10 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
+app.get("/health", (req, res) => {
+  res.send("AWS Deployment Successfull.");
+});
+
 const PORT = process.env.PORT || 4000;
 
 app.listen(PORT, () => {
